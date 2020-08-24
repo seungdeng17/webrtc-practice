@@ -36,7 +36,7 @@ function App() {
 
   useEffect(() => {
     socket.current = io.connect("http://localhost:8000");
-    navigator.mediaDevices.getUserMedia({ video: false, audio: true }).then(stream => {
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
       setStream(stream);
       if (userVideo.current) {
         userVideo.current.srcObject = stream;
