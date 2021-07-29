@@ -25,9 +25,9 @@ app.get("/*", (_, res) => {
   res.status(200).sendFile(path.join(__dirname, "../client/build", "/index.html"));
 });
 
-app.listen(3001, () => {
-  console.log("HTTP Server is running at 3001!");
+app.listen(80, () => {
+  console.log("HTTP Server is running at 80!");
 });
-httpsServer.listen(3002, () => {
-  console.log("HTTPS Server is running at 3002!");
+httpsServer.listen(443, () => {
+  console.log("HTTPS Server is running at 443!");
 });
