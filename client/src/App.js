@@ -4,10 +4,14 @@ import styled from "styled-components";
 
 export default function App() {
   const socket = useRef();
-  const myPC = useRef(new RTCPeerConnection(PEER_CONFIG));
+  const myPeer = useRef(new RTCPeerConnection(PEER_CONFIG));
+  const remotePeer = useRef(new MediaStream());
 
   const myVideo = useRef();
+  const remoteVideo = useRef();
   const [myStream, setMyStream] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+
   useEffect(() => {
     (async () => {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -17,12 +21,22 @@ export default function App() {
       setMyStream(stream);
       if (myVideo.current) myVideo.current.srcObject = stream;
       stream.getTracks().forEach((track) => {
-        myPC.current.addTrack(track, stream);
+        myPeer.current.addTrack(track);
       });
     })();
+  }, []);
 
-    myPC.current.addEventListener("connectionstatechange", () => {
-      if (myPC.current.connectionState === "connected") {
+  useEffect(() => {
+    myPeer.current.addEventListener("track", async ({ track }) => {
+      remotePeer.current.addTrack(track);
+    });
+
+    myPeer.current.addEventListener("connectionstatechange", () => {
+      if (myPeer.current.connectionState === "connected") {
+        setIsConnected(true);
+        if (remoteVideo.current)
+          remoteVideo.current.srcObject = remotePeer.current;
+
         console.log("Peer connected!!");
       }
     });
@@ -33,6 +47,7 @@ export default function App() {
   const [offer, setOffer] = useState(null);
   const [caller, setCaller] = useState("");
   const [isCalling, setIsCalling] = useState(false);
+
   useEffect(() => {
     socket.current = io.connect("https://localhost:443");
     socket.current.on("setMyId", (myId) => setMyId(myId));
@@ -47,7 +62,7 @@ export default function App() {
     socket.current.on("sendCandidateToTarget", async ({ candidate }) => {
       if (candidate) {
         try {
-          await myPC.current.addIceCandidate(candidate);
+          await myPeer.current.addIceCandidate(candidate);
         } catch (e) {}
       }
     });
@@ -57,27 +72,27 @@ export default function App() {
     socket.current.on("sendAnswerToCaller", async ({ answer }) => {
       if (answer) {
         const remoteDesc = new RTCSessionDescription(answer);
-        await myPC.current.setRemoteDescription(remoteDesc);
+        await myPeer.current.setRemoteDescription(remoteDesc);
       }
     });
-    const offer = await myPC.current.createOffer();
-    await myPC.current.setLocalDescription(offer);
+    const offer = await myPeer.current.createOffer();
+    await myPeer.current.setLocalDescription(offer);
     socket.current.emit("offer", { callee, offer });
 
-    myPC.current.addEventListener(
+    myPeer.current.addEventListener(
       "icecandidate",
       iceCandidateHandler.bind(null, callee)
     );
   }
 
   async function onClickAccept() {
-    myPC.current.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await myPC.current.createAnswer();
-    await myPC.current.setLocalDescription(answer);
+    myPeer.current.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await myPeer.current.createAnswer();
+    await myPeer.current.setLocalDescription(answer);
     socket.current.emit("answer", { caller, answer });
     setIsCalling(false);
 
-    myPC.current.addEventListener(
+    myPeer.current.addEventListener(
       "icecandidate",
       iceCandidateHandler.bind(null, caller)
     );
@@ -94,6 +109,9 @@ export default function App() {
       <p>ID: {myId}</p>
       {myStream && (
         <Video ref={myVideo} muted autoPlay playsinline controls={false} />
+      )}
+      {isConnected && (
+        <Video ref={remoteVideo} autoPlay playsinline controls={false} />
       )}
       {users &&
         users.map((id) => {
