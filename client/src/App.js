@@ -5,7 +5,7 @@ import styled from "styled-components";
 export default function App() {
   const socket = useRef();
   const myPeer = useRef(new RTCPeerConnection(PEER_CONFIG));
-  const remotePeer = useRef(new MediaStream());
+  const remoteStream = useRef(new MediaStream());
 
   const myVideo = useRef();
   const remoteVideo = useRef();
@@ -28,14 +28,14 @@ export default function App() {
 
   useEffect(() => {
     myPeer.current.addEventListener("track", async ({ track }) => {
-      remotePeer.current.addTrack(track);
+      remoteStream.current.addTrack(track);
     });
 
     myPeer.current.addEventListener("connectionstatechange", () => {
       if (myPeer.current.connectionState === "connected") {
         setIsConnected(true);
         if (remoteVideo.current)
-          remoteVideo.current.srcObject = remotePeer.current;
+          remoteVideo.current.srcObject = remoteStream.current;
 
         console.log("Peer connected!!");
       }
@@ -52,6 +52,7 @@ export default function App() {
     socket.current = io.connect("https://192.168.0.4:8000");
     socket.current.on("setMyId", (myId) => setMyId(myId));
     socket.current.on("users", (users) => setUsers(users));
+
     socket.current.on("sendOfferToCallee", async ({ caller, offer }) => {
       if (offer) {
         setOffer(offer);
@@ -59,6 +60,15 @@ export default function App() {
         setIsCalling(true);
       }
     });
+
+    socket.current.on("sendAnswerToCaller", async ({ answer }) => {
+      if (answer) {
+        await myPeer.current.setRemoteDescription(
+          new RTCSessionDescription(answer)
+        );
+      }
+    });
+
     socket.current.on("sendCandidateToTarget", async ({ candidate }) => {
       if (candidate) {
         try {
@@ -68,13 +78,7 @@ export default function App() {
     });
   }, []);
 
-  async function callPeer(callee) {
-    socket.current.on("sendAnswerToCaller", async ({ answer }) => {
-      if (answer) {
-        const remoteDesc = new RTCSessionDescription(answer);
-        await myPeer.current.setRemoteDescription(remoteDesc);
-      }
-    });
+  async function onClickConnectRequest(callee) {
     const offer = await myPeer.current.createOffer();
     await myPeer.current.setLocalDescription(offer);
     socket.current.emit("offer", { callee, offer });
@@ -120,7 +124,7 @@ export default function App() {
               <button
                 type="button"
                 key={callee}
-                onClick={() => callPeer(callee)}
+                onClick={() => onClickConnectRequest(callee)}
               >
                 {callee}
               </button>

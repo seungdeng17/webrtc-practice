@@ -35,7 +35,7 @@ io.on("connection", (socket) => {
   const socketId = socket.id;
   if (!users.has(socketId)) users.set(socketId, socketId);
 
-  socket.emit("setMyId", socket.id);
+  socket.emit("setMyId", socketId);
   io.sockets.emit("users", [...users.values()]);
 
   // sdp
