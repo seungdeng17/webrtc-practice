@@ -114,11 +114,15 @@ export default function App() {
         <Video ref={remoteVideo} autoPlay playsinline controls={false} />
       )}
       {users &&
-        users.map((id) => {
+        users.map((callee) => {
           return (
-            id !== myId && (
-              <button type="button" key={id} onClick={() => callPeer(id)}>
-                {id}
+            callee !== myId && (
+              <button
+                type="button"
+                key={callee}
+                onClick={() => callPeer(callee)}
+              >
+                {callee}
               </button>
             )
           );
