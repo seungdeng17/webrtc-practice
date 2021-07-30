@@ -31,6 +31,13 @@ io.on("connection", (socket) => {
     io.to(caller).emit("sendAnswerToCaller", { answer })
   );
 
+  // ice candidate
+  socket.on("new-ice-candidate", async ({ target, candidate }) => {
+    if (candidate) {
+      io.to(target).emit("sendCandidateToTarget", { candidate });
+    }
+  });
+
   socket.on("disconnect", () => users.delete(socketId));
 });
 

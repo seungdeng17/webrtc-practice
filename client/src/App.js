@@ -20,6 +20,12 @@ export default function App() {
         myPC.current.addTrack(track, stream);
       });
     })();
+
+    myPC.current.addEventListener("connectionstatechange", () => {
+      if (myPC.current.connectionState === "connected") {
+        console.log("Peer connected!!");
+      }
+    });
   }, []);
 
   const [myId, setMyId] = useState("");
@@ -38,6 +44,13 @@ export default function App() {
         setIsCalling(true);
       }
     });
+    socket.current.on("sendCandidateToTarget", async ({ candidate }) => {
+      if (candidate) {
+        try {
+          await myPC.current.addIceCandidate(candidate);
+        } catch (e) {}
+      }
+    });
   }, []);
 
   async function callPeer(callee) {
@@ -50,6 +63,11 @@ export default function App() {
     const offer = await myPC.current.createOffer();
     await myPC.current.setLocalDescription(offer);
     socket.current.emit("offer", { callee, offer });
+
+    myPC.current.addEventListener(
+      "icecandidate",
+      iceCandidateHandler.bind(null, callee)
+    );
   }
 
   async function onClickAccept() {
@@ -58,6 +76,17 @@ export default function App() {
     await myPC.current.setLocalDescription(answer);
     socket.current.emit("answer", { caller, answer });
     setIsCalling(false);
+
+    myPC.current.addEventListener(
+      "icecandidate",
+      iceCandidateHandler.bind(null, caller)
+    );
+  }
+
+  function iceCandidateHandler(target, { candidate }) {
+    if (candidate) {
+      socket.current.emit("new-ice-candidate", { target, candidate });
+    }
   }
 
   return (
