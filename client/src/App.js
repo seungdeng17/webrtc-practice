@@ -6,6 +6,22 @@ export default function App() {
   const socket = useRef();
   const myPC = useRef(new RTCPeerConnection(PEER_CONFIG));
 
+  const myVideo = useRef();
+  const [myStream, setMyStream] = useState(null);
+  useEffect(() => {
+    (async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      setMyStream(stream);
+      if (myVideo.current) myVideo.current.srcObject = stream;
+      stream.getTracks().forEach((track) => {
+        myPC.current.addTrack(track, stream);
+      });
+    })();
+  }, []);
+
   const [myId, setMyId] = useState("");
   const [users, setUsers] = useState(null);
   const [offer, setOffer] = useState(null);
@@ -22,19 +38,6 @@ export default function App() {
         setIsCalling(true);
       }
     });
-  }, []);
-
-  const [myStream, setMyStream] = useState(null);
-  const myVideo = useRef();
-  useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
-      .then((stream) => {
-        setMyStream(stream);
-        if (myVideo.current) {
-          myVideo.current.srcObject = stream;
-        }
-      });
   }, []);
 
   async function callPeer(callee) {
@@ -54,7 +57,6 @@ export default function App() {
     const answer = await myPC.current.createAnswer();
     await myPC.current.setLocalDescription(answer);
     socket.current.emit("answer", { caller, answer });
-    
     setIsCalling(false);
   }
 
