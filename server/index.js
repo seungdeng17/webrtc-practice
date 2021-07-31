@@ -27,7 +27,7 @@ app.get("/*", (_, res) => {
 });
 
 // socket io
-const io = socket(httpsServer);
+const io = socket(httpServer);
 
 const users = new Map();
 
@@ -57,13 +57,13 @@ io.on("connection", (socket) => {
 });
 
 // running server
-httpsServer.listen(443, () => {
-  console.log("HTTPS Server is running at 443!");
-});
-
-// httpServer.listen(80, () => {
-//   console.log("HTTP Server is running at 443!");
+// httpsServer.listen(443, () => {
+//   console.log("HTTPS Server is running at 443!");
 // });
+
+httpServer.listen(80, () => {
+  console.log("HTTP Server is running at 80!");
+});
 
 // httpsServer.listen(8000, '192.168.0.4');
 // httpsServer.on('listening', function() {
