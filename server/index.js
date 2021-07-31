@@ -6,17 +6,17 @@ const express = require("express");
 const socket = require("socket.io");
 const cors = require('cors');
 
-// set https server
+// set http & https server
 const credentials = {
   key: fs.readFileSync("./cert/localhost.key"),
   cert: fs.readFileSync("./cert/localhost.crt"),
 };
 const app = express();
-const httpServer = https.createServer(app);
+const httpServer = http.createServer(app);
 const httpsServer = https.createServer(credentials, app);
 
 app.use(cors({
-  origin: 'https://192.168.0.4:3000',
+  origin: 'http://localhost:3000',
   credentials: true,
 }));
 app.use(express.static("public"));
@@ -57,15 +57,15 @@ io.on("connection", (socket) => {
 });
 
 // running server
-// httpsServer.listen(443, () => {
-//   console.log("HTTPS Server is running at 443!");
-// });
-
-// httpsServer.listen(8000, () => {
-//   console.log("HTTP Server is running at 8000!");
-// });
-
-httpsServer.listen(8000, '192.168.0.4');
-httpsServer.on('listening', function() {
-    console.log('Express server started on port %s at %s', httpsServer.address().port, httpsServer.address().address);
+httpsServer.listen(443, () => {
+  console.log("HTTPS Server is running at 443!");
 });
+
+// httpServer.listen(80, () => {
+//   console.log("HTTP Server is running at 443!");
+// });
+
+// httpsServer.listen(8000, '192.168.0.4');
+// httpsServer.on('listening', function() {
+//     console.log('Express server started on port %s at %s', httpsServer.address().port, httpsServer.address().address);
+// });

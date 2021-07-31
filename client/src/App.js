@@ -49,7 +49,7 @@ export default function App() {
   const [isCalling, setIsCalling] = useState(false);
 
   useEffect(() => {
-    socket.current = io.connect("https://192.168.0.4:8000");
+    socket.current = io.connect("https://localhost:443");
     socket.current.on("setMyId", (myId) => setMyId(myId));
     socket.current.on("users", (users) => setUsers(users));
 
